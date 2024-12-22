@@ -85,14 +85,14 @@ class Guns(sprite.Sprite):
 
 
 class Player(sprite.Sprite):
-    def __init__(self, x, y, w, h, speed, img, move_x):
+    def __init__(self, x, y, w, h, speed, img):
         super().__init__()
         
         self.w, self.h = w, h
         
         self.start_img = img
         
-        self.move_x = move_x
+        self.move_x = 0
         self.speed = speed
         self.img = transform.scale(image.load(img), (w, h))
         
@@ -146,14 +146,16 @@ class Player(sprite.Sprite):
                 self.rect.x += self.speed
         else:
             self.count = 0
-            self.img = self.img = transform.scale(image.load(self.start_img), (self.rect.width, self.rect.height))
+            self.img = transform.scale(
+                image.load(self.start_img),
+                (self.rect.width, self.rect.height)
+            )
             
         
     def draw(self):
         window.blit(self.img, (self.rect.x, self.rect.y))
 
-bg_x = 0
-sprite = Player(20, 350, 50, 50, 5, 'images/player_sprite.png', bg_x)
+sprite = Player(20, 350, 50, 50, 3, 'images/player_sprite.png')
 
 game = True
 
