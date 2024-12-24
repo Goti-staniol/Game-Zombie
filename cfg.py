@@ -8,6 +8,7 @@ hover_start_img = 'src/images/b_imgs/hover_start.png'
 exit_btn_img = 'src/images/b_imgs/exit_btn.png'
 hover_exit_img = 'src/images/b_imgs/hover_exit.png'
 bg_img = transform.scale(image.load('src/images/bg.png'), (W, H))
+bullet_img = 'src/images/bullet.png'
 
 idle = [
     image.load('src/images/p_idle/1.png'),
@@ -15,7 +16,7 @@ idle = [
     # image.load('images/p_idle/3.png')
 ]
 
-walk_right = [
+walking = [
     image.load('src/images/p_right/one.png'),
     image.load('src/images/p_right/two.png'),
     image.load('src/images/p_right/three.png'),
