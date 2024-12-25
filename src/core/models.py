@@ -5,13 +5,14 @@ from cfg import (
 )
 
 from pygame import *
+
 from time import time
+from random import randint
 
 window = display.set_mode((W, H))
 display.set_caption('Zombie Survaival')
 
 zombies = []
-bullets = []
 
 
 class Buttons(sprite.Sprite):
@@ -26,58 +27,51 @@ class Buttons(sprite.Sprite):
         window.blit(self.img, (self.rect.x, self.rect.y))
 
 
-class Zombie(sprite.Sprite):
-    def __init__(self, x, y, w, h, speed, img):
+class ZombieModel(sprite.Sprite):
+    def __init__(self, w, h, speed):
         super().__init__()
         
-        self.w, self.h = w, h
+        self.img = transform.scale(
+            image.load('src/images/player_sprite.png'), 
+            (w, h)
+        )
+        
+        self.rect = self.img.get_rect()
+        self.rect.x, self.rect.y = 650, randint(330, 385)
         
         self.speed = speed
-        
-        self.img = transform.scale(image.load(img), (w, h))
-        self.rect = self.img.get_rect()
-        self.rect.x, self.rect.y = x, y
-        
-    def draw(self):
-        window.blit(self.img, (self.rect.x, self.rect.y))
-    
+
     def move(self):
         self.rect.x -= self.speed
+    
+    def draw(self):
+        window.blit(self.img, (self.rect.x, self.rect.y))
 
 
-class Gun(sprite.Sprite):
-    def __init__(self, w, h, player, img):
-        super().__init__()
-        
-        self.w, self.h = w, h
-        self.player = player
-        self.bullets = []  
-        self.bullet_image = transform.scale(image.load(img), (w, h))
+class Zombie(ZombieModel):
+    def __init__(self, w, h, speed):
+        super().__init__(w, h, speed)
         
         self.spawn_time = time()
-        self.interval = 0.3
 
-    def shot(self, keys):
-        if keys[K_z]:
-            current_time = time()
+    def add_zombie(self):
+        current_time = time()
+                
+        if current_time - self.spawn_time >= 3:
+            zombies.append(
+                ZombieModel(
+                    100,
+                    100,
+                    2
+                )
+            )
             
-            if current_time - self.spawn_time >= self.interval:
-                bullet_rect = self.bullet_image.get_rect(topleft=(self.player.rect.x + 80, self.player.rect.y + 35))
-                self.bullets.append(bullet_rect)
-                
-                self.spawn_time = current_time
-
-    def update_bullets(self):
-        for bullet in self.bullets:
-            bullet.x += 7 
-
-        self.bullets = [bullet for bullet in self.bullets if bullet.left < display.get_surface().get_width()]
-
-    def draw_bullets(self, window):
-        for bullet in self.bullets:
-            window.blit(self.bullet_image, bullet)
-                
-
+            self.spawn_time = current_time
+    
+    def update(self):
+        for zombie in zombies:
+            zombie.draw()
+            zombie.move() 
 
 class Player(sprite.Sprite):
     def __init__(self, x, y, w, h, speed, hero_img):
@@ -178,5 +172,49 @@ class Player(sprite.Sprite):
                
     def draw(self):
         window.blit(self.hero_img, (self.rect.x, self.rect.y))
+
+
+class Gun(sprite.Sprite):
+    def __init__(self, w, h, player: Player, img):
+        super().__init__()
+        
+        self.w, self.h = w, h
+        self.player = player
+        self.bullets = []  
+        self.bullet_image = transform.scale(image.load(img), (w, h))
+        
+        self.rect = self.bullet_image.get_rect()
+        
+        self.spawn_time = time()
+        self.interval = 0.3
+
+    def shot(self, keys):
+        if keys[K_LSHIFT]:
+            current_time = time()
+            
+            if current_time - self.spawn_time >= self.interval:
+                bullet_rect = self.bullet_image.get_rect(topleft=(self.player.rect.x + 80, self.player.rect.y + 35))
+                self.bullets.append(bullet_rect)
+                
+                self.spawn_time = current_time
+
+    def update_bullets(self):
+        for bullet in self.bullets:
+            bullet.x += 7 
+            
+            for zombie in zombies:
+                if bullet.colliderect(zombie.rect):
+                    self.bullets.remove(bullet)
+                    zombies.remove(zombie)
+
+        self.bullets = [bullet for bullet in self.bullets if bullet.left < display.get_surface().get_width()]
+
+    def draw_bullets(self, window):
+        for bullet in self.bullets:
+            window.blit(self.bullet_image, bullet)
+                
+
+
+
         
         

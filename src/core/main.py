@@ -14,8 +14,7 @@ from .models import (
     Buttons,
     window,
     Gun,
-    zombies,
-    bullets
+    zombies
 )
 
 import pygame
@@ -37,7 +36,7 @@ if music:
 def start_game(status: bool, current_window = 'main') -> None:
     player = Player(20, 350, 100, 100, 3, 'src/images/player_sprite.png')
     gun = Gun(10, 10, player, bullet_img)
-    print(f"Позиция игрока: {player.rect}")
+    zombie = Zombie(100, 100, 3)
 
     start_btn = Buttons(350, 250, 50, 50, start_btn_img)
     exit_btn = Buttons(250, 280, 200, 100, exit_btn_img)
@@ -77,20 +76,8 @@ def start_game(status: bool, current_window = 'main') -> None:
             gun.update_bullets()        
             gun.draw_bullets(window)
             
-            current_time = time()
-            
-            if current_time - spawn_time >= spawn_interval:
-                y = randint(330, 385)
-                zombies.append(Zombie(650, y, 50, 50, 1, 'src/images/player_sprite.png'))
-                
-                spawn_time = current_time
-                
-                if spawn_interval != 1:
-                    spawn_interval -= 1
-            
-            for zombie in zombies:
-                zombie.draw()
-                zombie.move()
+            zombie.add_zombie()
+            zombie.update()
         
         for e in event.get():
             if e.type == QUIT:
