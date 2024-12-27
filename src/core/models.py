@@ -1,10 +1,12 @@
 from cfg import (
     W, H,
-    walking,
-    idle,
+    walking
 )
 
+from typing import Tuple
+
 from pygame import *
+import pygame
 
 from time import time
 from random import randint
@@ -16,189 +18,215 @@ zombies = []
 
 
 class Buttons(sprite.Sprite):
-    def __init__(self, x, y, w, h, img):
+    def __init__(
+        self,
+        position: Tuple[int, int],
+        size: Tuple[int, int],
+        img
+    ):
         super().__init__()
-        
-        self.img = transform.scale(image.load(img), (w, h))
+        self.img = transform.scale(image.load(img), size)
         self.rect = self.img.get_rect()
-        self.rect.x, self.rect.y = x, y
+        self.rect.x, self.rect.y = position
     
     def draw(self):
         window.blit(self.img, (self.rect.x, self.rect.y))
 
 
-class ZombieModel(sprite.Sprite):
-    def __init__(self, w, h, speed):
+class CheckBox(sprite.Sprite):
+    def __init__(
+        self,
+        position: Tuple[int, int],
+        size: Tuple[int, int],
+        text: str,
+        img: str
+    ):
         super().__init__()
-        
+        self.position = position
+        self.size = size
+        self.checked: bool = False
         self.img = transform.scale(
-            image.load('src/images/player_sprite.png'), 
-            (w, h)
+            image.load(img),
+            size
         )
+        self.rect = self.img.get_rect()
         
+        font = pygame.font.Font(None, 23)
+        self.text = font.render(text, True, (0, 0, 0))
+        self.text_pos = (
+            self.rect.x + 50, 
+            self.rect.y + 20
+        )
+    
+    def draw(self):
+        window.blit(self.text, self.text_pos)
+        window.blit(self.img, self.position)
+
+
+class ZombieModel(sprite.Sprite):
+    def __init__(self, size: Tuple[int, int], speed: int, img: str):
+        super().__init__()
+        self.img = transform.scale(
+            image.load(img), 
+            size
+        )
         self.rect = self.img.get_rect()
         self.rect.x, self.rect.y = 650, randint(330, 385)
-        
         self.speed = speed
 
     def move(self):
         self.rect.x -= self.speed
-    
+
     def draw(self):
         window.blit(self.img, (self.rect.x, self.rect.y))
 
 
-class Zombie(ZombieModel):
-    def __init__(self, w, h, speed):
-        super().__init__(w, h, speed)
-        
+class Zombie:
+    def __init__(self, size: Tuple[int, int], speed: int, img: str):
+        self.size = size
+        self.speed = speed
+        self.img = img
         self.spawn_time = time()
 
-    def add_zombie(self):
+    def add_zombie(self) -> None:
         current_time = time()
                 
         if current_time - self.spawn_time >= 3:
             zombies.append(
                 ZombieModel(
-                    100,
-                    100,
-                    2
+                    self.size,
+                    self.speed,
+                    self.img
                 )
             )
             
             self.spawn_time = current_time
     
-    def update(self):
+    def update(self) -> None:
         for zombie in zombies:
             zombie.draw()
             zombie.move() 
 
+
 class Player(sprite.Sprite):
-    def __init__(self, x, y, w, h, speed, hero_img):
-        self.initial_image = transform.scale(image.load(hero_img), (w, h))
-        
-        self.hero_img = transform.scale(image.load(hero_img), (w, h))
-        
-        self.x, self.y = x, y
-        
+    def __init__(
+        self, 
+        position: Tuple[int, int],
+        size: Tuple[int, int],
+        speed: int, 
+        hero_img: str,
+        bullets_img: str
+    ):
+        self.initial_image = transform.scale(image.load(hero_img), size)
+        self.hero_img = transform.scale(image.load(hero_img), size)
         self.rect = self.hero_img.get_rect()
-        self.w, self.h = w, h
-        self.rect.x, self.rect.y = x, y
-        
+        self.w, self.h = size
+        self.rect.x, self.rect.y = position
         self.speed = speed
-        
-        self.step_counting_w = 0
-        self.step_counting_s = 0
-        self.step_counting_d = 0
-        
+        self.gun = Gun((10, 10), self, bullets_img)
+        self.step_counting = {'w': 0, 'a': 0, 's': 0, 'd': 0}
         self.y_velocity = 0
         self.move_x = 0
-        
         self.last_update = time()
-        
         self.reload = False
         self.moving = False
         self.is_jumping = False
     
-    def control(self, keys):
+    def control(self, keys) -> None:
         if not self.reload:
             if keys[K_SPACE] and not self.is_jumping:
                 self.start_y = self.rect.y
-                
                 self.y_velocity = -10
                 self.is_jumping = True
-                
+
             if self.is_jumping:
                 self.y_velocity += 1
                 self.rect.y += self.y_velocity
-                
+
                 if self.rect.y >= self.start_y:
                     self.rect.y = self.start_y
                     self.y_velocity = 0
                     self.is_jumping = False
-                    
-            if keys[K_d] and self.rect.x < W - self.w:
-                if self.step_counting_d >= len(walking):
-                    self.step_counting_d = 0
-                
-                self.hero_img = transform.scale(
-                    walking[self.step_counting_d], 
-                    (self.w, self.h)
-                )
-                
-                self.step_counting_d += 1
-                self.move_x -= 5
-                
-                if self.move_x == -700:
-                    self.move_x = 0
-                    
-                if self.rect.x != 200:
-                    self.rect.x += self.speed
 
             if keys[K_w] and self.rect.y > 230:
-                if self.step_counting_w >= len(walking):
-                    self.step_counting_w = 0
-                
-                self.hero_img = transform.scale(
-                    walking[self.step_counting_w], 
-                    (self.w, self.h)
-                )
-                
-                self.step_counting_w += 1
-                self.rect.y -= self.speed
-            
-            if keys[K_s] and self.rect.y < H - 140:
-                if self.step_counting_s >= len(walking):
-                    self.step_counting_s = 0
-                
-                self.hero_img = transform.scale(
-                    walking[self.step_counting_s], 
-                    (self.w, self.h)
-                )
-                
-                self.step_counting_s += 1
-                
-                self.rect.y += self.speed
-            
-            if not (keys[K_d] or keys[K_w] or keys[K_s]):
-                self.step_counting_w = 0
-                self.step_counting_s = 0
-                self.step_counting_d = 0
-
+                self.logik_move('w')
+            else:
                 self.hero_img = self.initial_image
 
             if keys[K_a] and self.rect.x > 0:
-                self.rect.x -= self.speed
-               
-    def draw(self):
+                self.logik_move('a')
+            else:
+                self.step_counting['a'] = 0
+
+            if keys[K_s] and self.rect.y < H - 140:
+                self.logik_move('s')
+            else:
+                self.step_counting['s'] = 0
+
+            if keys[K_d]:
+                self.logik_move('d')
+                self.move_x -= 5
+
+                if self.move_x == -700:
+                    self.move_x = 0
+            else:
+                self.step_counting['d'] = 0
+
+            if keys[K_LSHIFT]:
+                self.gun.shot()
+
+            if not (keys[K_d] or keys[K_w] or keys[K_s]):
+                self.step_counting = {'w': 0, 'a': 0, 's': 0, 'd': 0}
+                self.hero_img = self.initial_image
+
+    def logik_move(self, key: str) -> None:
+        if self.step_counting[key] >= len(walking):
+            self.step_counting[key] = 0
+        
+        self.hero_img = transform.scale(
+            walking[self.step_counting[key]], 
+            (self.w, self.h)
+        )
+        self.step_counting[key] += 1 
+        
+        self.rect.x += self.speed if key == 'd' and self.rect.x != 200\
+            else -self.speed if key == 'a' else 0
+        self.rect.y += self.speed if key == 's' else\
+            -self.speed if key == 'w' else 0
+
+    def draw(self) -> None:
         window.blit(self.hero_img, (self.rect.x, self.rect.y))
 
 
 class Gun(sprite.Sprite):
-    def __init__(self, w, h, player: Player, img):
+    def __init__(
+        self,
+        bullet_size: Tuple[int, int],
+        player: 'Player', 
+        img: str
+    ):
         super().__init__()
         
-        self.w, self.h = w, h
+        self.w, self.h = bullet_size
         self.player = player
         self.bullets = []  
-        self.bullet_image = transform.scale(image.load(img), (w, h))
+        self.bullet_image = transform.scale(image.load(img), bullet_size)
         
         self.rect = self.bullet_image.get_rect()
         
         self.spawn_time = time()
         self.interval = 0.3
 
-    def shot(self, keys):
-        if keys[K_LSHIFT]:
-            current_time = time()
+    def shot(self) -> None:
+        current_time = time()
+        
+        if current_time - self.spawn_time >= self.interval:
+            bullet_rect = self.bullet_image.get_rect(topleft=(self.player.rect.x + 80, self.player.rect.y + 35))
+            self.bullets.append(bullet_rect)
             
-            if current_time - self.spawn_time >= self.interval:
-                bullet_rect = self.bullet_image.get_rect(topleft=(self.player.rect.x + 80, self.player.rect.y + 35))
-                self.bullets.append(bullet_rect)
-                
-                self.spawn_time = current_time
+            self.spawn_time = current_time
 
-    def update_bullets(self):
+    def update_bullets(self) -> None:
         for bullet in self.bullets:
             bullet.x += 7 
             
@@ -209,12 +237,7 @@ class Gun(sprite.Sprite):
 
         self.bullets = [bullet for bullet in self.bullets if bullet.left < display.get_surface().get_width()]
 
-    def draw_bullets(self, window):
+    def draw_bullets(self) -> None:
         for bullet in self.bullets:
             window.blit(self.bullet_image, bullet)
                 
-
-
-
-        
-        
