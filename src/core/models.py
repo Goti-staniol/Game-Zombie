@@ -1,6 +1,8 @@
 from cfg import (
     W, H,
-    walking
+    walking,
+    back_walk,
+    reload_gun
 )
 
 from typing import Tuple
@@ -44,7 +46,6 @@ class CheckBox(sprite.Sprite):
         super().__init__()
         self.position = position
         self.size = size
-        self.checked: bool = False
         self.img = transform.scale(
             image.load(img),
             size
@@ -127,6 +128,7 @@ class Player(sprite.Sprite):
         self.step_counting = {'w': 0, 'a': 0, 's': 0, 'd': 0}
         self.y_velocity = 0
         self.move_x = 0
+        self.reload_frame = 0
         self.last_update = time()
         self.reload = False
         self.moving = False
@@ -148,20 +150,18 @@ class Player(sprite.Sprite):
                     self.y_velocity = 0
                     self.is_jumping = False
 
-            if keys[K_w] and self.rect.y > 230:
+            if keys[K_w] and self.rect.y > H - 230:
                 self.logik_move('w')
             else:
                 self.hero_img = self.initial_image
-
+            
             if keys[K_a] and self.rect.x > 0:
                 self.logik_move('a')
-            else:
-                self.step_counting['a'] = 0
 
-            if keys[K_s] and self.rect.y < H - 140:
+            if keys[K_s] and self.rect.y < 365:
                 self.logik_move('s')
-            else:
-                self.step_counting['s'] = 0
+            elif keys[K_s]:
+                self.hero_img = self.initial_image
 
             if keys[K_d]:
                 self.logik_move('d')
@@ -169,19 +169,32 @@ class Player(sprite.Sprite):
 
                 if self.move_x == -700:
                     self.move_x = 0
-            else:
-                self.step_counting['d'] = 0
 
+            if keys[K_r]:
+                self.reload = True
+            
             if keys[K_LSHIFT]:
                 self.gun.shot()
 
-            if not (keys[K_d] or keys[K_w] or keys[K_s]):
+            if not (keys[K_d] or keys[K_w] or keys[K_s] or keys[K_a]):
                 self.step_counting = {'w': 0, 'a': 0, 's': 0, 'd': 0}
                 self.hero_img = self.initial_image
-
+        else:
+            self.hero_img = self.initial_image
+            current_frame = reload_gun[self.reload_frame // 5]  
+            window.blit(current_frame, (self.rect.x, self.rect.y))
+            
+            self.reload_frame += 1
+            
+            if self.reload_frame >= len(reload_gun) * 5:  
+                self.reload_frame = 0
+                self.reload = False
+        
     def logik_move(self, key: str) -> None:
         if self.step_counting[key] >= len(walking):
             self.step_counting[key] = 0
+        
+        # step_list = walking if key != 'a' else back_walk
         
         self.hero_img = transform.scale(
             walking[self.step_counting[key]], 
@@ -195,6 +208,7 @@ class Player(sprite.Sprite):
             -self.speed if key == 'w' else 0
 
     def draw(self) -> None:
+        print(f'Позиция игрока: <{self.rect.x, self.rect.y}>')
         window.blit(self.hero_img, (self.rect.x, self.rect.y))
 
 

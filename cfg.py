@@ -19,6 +19,11 @@ bg_img = transform.scale(image.load('src/images/bg.png'), (W, H))
 
 bullet_img = 'src/images/bullet.png'
 
+reload_gun = [
+    image.load('src/images/p_idle/1.png'),
+    image.load('src/images/p_idle/2.png')
+]
+
 idle = [
     image.load('src/images/p_idle/1.png'),
     image.load('src/images/p_idle/2.png')
@@ -32,4 +37,8 @@ walking = [
     image.load('src/images/p_walking/five.png'),
     image.load('src/images/p_walking/six.png')
     
+]
+
+back_walk = [
+    []
 ]
